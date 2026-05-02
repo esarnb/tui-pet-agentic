@@ -1,0 +1,71 @@
+## INSTRUCTIONS.TXT — tui-pet-agentic progress log
+## Last updated: all code bugs fixed, ready for first test run
+
+### STATUS: All files written and reviewed. Code is ready to test.
+
+### All files (DO NOT recreate):
+  requirements.txt     rich>=13.0
+  state.py             load/save/decay/actions/evolution — complete
+  sprites.py           all sprites (egg/hatchling/drake/dragon, all moods) — complete
+                       render_sprite() returns List[Text], one per row
+  pet.py               CLI (all commands) — complete, all Text composition bugs fixed
+  pet_window.py        live window — complete, sprite rendering fixed
+  launch.bat           Windows Terminal launcher
+  launch.ps1           PowerShell launcher fallback
+  pet.bat              CMD/PowerShell shim
+  pet                  Git Bash shim
+  setup.bat            pip install + setx PATH
+
+### BUGS FIXED THIS SESSION:
+  1. render_sprite() now returns List[Text] (not a single Text with .split() calls)
+  2. pet_window.py now iterates the list properly
+  3. pet.py _bar() no longer uses Text + Text (uses t.append() instead)
+  4. CLI commands (feed/pet/play/wake) no longer embed Text in f-strings — use
+     Text.append_text() to compose colored output properly
+  5. _check_evolved() was double-calling check_evolution (dead code) — replaced
+     with _print_evolution(name, old_stage, new_stage) pattern
+  6. cmd_evolve() no longer converts Text to string via str() join
+  7. Removed unused imports (sys, Align) from pet_window.py
+
+### NEXT STEPS (DO IN ORDER):
+
+1. INSTALL DEPS — ask user to run:
+   pip install -r requirements.txt
+
+2. SMOKE TEST sprites (should show a colored egg):
+   cd C:\Users\esarn\Documents\Claude\tui-pet-agentic
+   python -c "from rich.console import Console; from sprites import get_sprite, render_sprite; from rich.text import Text; c=Console(); rows=render_sprite(get_sprite('egg','idle'),0); [c.print(r) for r in rows]"
+
+3. SMOKE TEST state:
+   python -c "from state import *; s=default_state(); apply_action(s,'feed'); print('hunger:', s['hunger'], 'xp:', s['xp'])"
+   Expected: hunger: 110.0 -> wait no, hunger starts at 80, +30 = 110 but capped at 100. So: hunger: 100, xp: 5... wait apply_decay isn't called so hunger is 80+30=110 -> min(100,110)=100. xp: 5.
+
+   Actually expected output: hunger: 100 xp: 5
+
+4. TEST CLI:
+   python pet.py status
+   python pet.py feed
+   python pet.py pet
+   python pet.py play
+   python pet.py evolve
+   python pet.py help
+
+5. TEST live window in separate terminal:
+   python pet_window.py
+   Then in another terminal: python pet.py feed
+   Window hunger bar should update within 1 second.
+
+### KNOWN POTENTIAL REMAINING ISSUES:
+  - Panel width=38 in pet_window.py: the sprite is 16 chars (2 chars/cell × 8 cells)
+    plus 2-space indent = 18 chars content width. The panel has padding=(0,1) so
+    adds 2 more chars (1 each side) = 20 chars needed inside. With box borders that's
+    22 total. Width=38 should be fine.
+  - If rich version is old (<13.0), Text.append_text may not exist. Use pip install
+    "rich>=13.0" to ensure correct version.
+  - The evolve labels line uses fixed spacing "   ".join() which may misalign with
+    the progress line below it. Not critical, just cosmetic.
+
+### DO NOT
+  - Do not run bash/powershell commands without explicit user approval
+  - Do not recreate files that already exist; read them first
+  - Do not add new dependencies beyond rich
